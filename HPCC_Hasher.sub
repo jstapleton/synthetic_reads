@@ -1,0 +1,18 @@
+
+
+#!/bin/bash -login
+#PBS -l walltime=12:00:00,nodes=1:ppn=2
+#PBS -j oe
+#PBS -N Hasher_Flash
+
+# Memory needed by the job
+#PBS -l mem=200gb
+
+### load necessary modules, e.g.
+module load Biopython
+
+# change to the working directory where your code is located
+cd $PBS_O_WORKDIR
+ 
+# call your executable
+/usr/bin/time -v python barcodeHasher.py forward_paired.fq,reverse_paired.fq,forward_unpaired.fq,JasmineR_PB_CTTGTA_L002_R1_001.fastq --pairSeparateFile --useFwdUnpaired --FLASH
