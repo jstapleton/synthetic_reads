@@ -12,7 +12,7 @@
 all: forward_paired1.fq reverse_paired1.fq forward_unpaired1.fq forward_paired2.fq reverse_paired2.fq forward_unpaired2.fq forward_paired_merged.fq reverse_paired_merged.fq forward_unpaired_merged.fq unpairedDict.txt contig_list.txt contig_lengths
 
 
-clean: 
+clean:
 	-rm -f barcodePairs.txt confirmedPairs.txt forward_paired1.fq reverse_paired1.fq forward_unpaired1.fq forward_paired2.fq reverse_paired2.fq forward_unpaired2.fq forward_paired_merged.fq reverse_paired_merged.fq forward_unpaired_merged.fq unpairedDict.txt contig_list.txt contig_lengths
 
 forward_paired1.fq reverse_paired1.fq forward_unpaired1.fq:
