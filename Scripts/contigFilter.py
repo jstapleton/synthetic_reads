@@ -46,7 +46,7 @@ def main(contig_file, minlength, maxlength, outfile):
                     trigger = 0
                 contig = []
                 bases = int(line.split('_')[3])
-                if bases > minlength and bases < maxlength:
+                if bases > int(minlength) and bases < int(maxlength):
                     trigger = 1
                     contig.append(line)
             #if line is sequence, append to growing contig
