@@ -147,7 +147,8 @@ def main(infile):
         for i in range(1, len(histogram)):
             total_barcodes += histogram[i]
         for i in range(1, len(histogram)):
-            histogram[i] = histogram[i] / float(total_barcodes)
+            if total_barcodes:
+                histogram[i] = histogram[i] / float(total_barcodes)
 
         # find the poisson mu that minimizes the square difference to the histogram
         best = 1000
