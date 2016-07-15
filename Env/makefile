@@ -61,7 +61,7 @@ unique_contig_lengths: unique_contig_list.txt
 	grep 'NODE' unique_contig_list.txt | cut -d_ -f 4 | sort -n -r > unique_contig_lengths
 
 filtered_contigs.txt: unique_contig_list.txt
-	python ~/source/contigFilter.py unique_contig_list.txt
+	python ~/source/contigFilter.py unique_contig_list.txt --minlength 500 --maxlength 3200
 
 filtered_contigs_noBarcodes.txt: filtered_contigs.txt
 	sed '/Barcode/d' filtered_contigs.txt > filtered_contigs_noBarcodes.txt

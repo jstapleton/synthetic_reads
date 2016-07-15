@@ -1,4 +1,4 @@
-,Env1_1,Env1_2,Env2_1,Env2_2
+,Env1_1 counts,Env1_2 counts,Env2_1 counts,Env2_2 counts
     1,10,28,550,3401
     2,0,1,2,18
     3,0,3,31,9
