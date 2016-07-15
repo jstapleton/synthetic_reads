@@ -26,6 +26,10 @@
 #                       barcode-defined group and sends them to SPAdes for
 #                       assembly.
 #
+#       --runTruSpades: creates fastq files from the reads in each
+#                          barcode-defined group and sends them to truSPAdes
+#                          for assembly.
+#
 #       --quality: creates fastq files rather than fasta files and uses
 #                   SPAdes's built-in error correction mode.
 #
@@ -38,13 +42,14 @@ import subprocess
 import os
 
 
-def main(infile, makeHistogram, runVelvet, diginorm, runSpades, HPCC, quality):
+def main(infile, makeHistogram, runVelvet, diginorm, runSpades, runTruSpades, HPCC, quality):
 
     MIN_NUMBER_OF_SEQUENCES = 100
     KMER_LENGTH = 99
     MIN_CONTIG_LENGTH = 350
+    TRUNCATED_BARCODE_LENGTH = 14
 
-    if not runVelvet and not makeHistogram and not runSpades:
+    if not runVelvet and not makeHistogram and not runSpades and not runTruSpades:
         print "Not doing anything!"
         return 0
 
@@ -54,7 +59,7 @@ def main(infile, makeHistogram, runVelvet, diginorm, runSpades, HPCC, quality):
         goodReads = 0
         totalReads = 0
         
-    if (runVelvet + runSpades):
+    if (runVelvet + runSpades + runTruSpades):
         if os.path.exists('./contig_list.txt'):
             subprocess.call(['rm', 'contig_list.txt'])
 
@@ -69,7 +74,7 @@ def main(infile, makeHistogram, runVelvet, diginorm, runSpades, HPCC, quality):
                 continue
             # start of a barcode, example:     "AAAAAACGTTATGCAG": [
             elif line[-2] == '[':
-                barcode = line[5:21]
+                barcode = line[5:5+TRUNCATED_BARCODE_LENGTH]
             # start of a sequence, example:
             # "GGAAACTATACTAAAACTTGCTAAAAGCCATGATAAACTGAT",
             elif line[-3] == '"':
@@ -345,6 +350,55 @@ def main(infile, makeHistogram, runVelvet, diginorm, runSpades, HPCC, quality):
                                 fout.write('>' + "Barcode: " + barcode + "\n")
                                 fout.write(data + "\n")
 
+                    if runTruSpades:
+                        # open an output file that will be
+                        # overwritten each time through
+                        # the loop with a fastq list of
+                        # sequences to feed to truSpades
+                        
+                        with open('reads_L1_R1.fq', 'w') as left,\
+                                open('reads_L1_R2.fq', 'w') as right:
+                                i = 1
+                                for seq1, qual1, seq2, qual2 in\
+                                        grouper(4, complete_list):
+                                    if (seq1 == "") or (seq2 == ""):
+                                        continue
+                                    left.write('@Seq_ID' + str(i) + '_1\n')
+                                    left.write(seq1 + '\n')
+                                    left.write('+\n')
+                                    left.write(qual1 + '\n')
+                                    right.write('@Seq_ID' + str(i) +
+                                                '_2\n')
+                                    right.write(seq2 + '\n')
+                                    right.write('+\n')
+                                    right.write(qual2 + '\n')
+                                    i += 1
+
+                                  # write dataset file
+                        with open('dataset_file.txt', 'w') as dataset_file:
+                            current_path = os.path.dirname(os.path.realpath('dataset_file.txt'))
+                            dataset_file.write(barcode + ' ' + current_path + '/reads_L1_R1.fq ' + current_path + '/reads_L1_R2.fq') 
+
+                    # run truSpades
+                        if HPCC:
+                            subprocess.call(["truspades.py", 
+                                             "--dataset", "dataset_file.txt",
+                                             "-t", "1",
+                                             "-o", "truspades_output"])
+                        else:
+                            subprocess.call(["truspades.py", 
+                                             "--dataset", "dataset_file.txt",
+                                             "-o", "truspades_output"])
+
+                        # append contigs.fasta to a growing file of contigs
+                        if os.path.exists("./truspades_output/contigs.fasta"):
+                            with open("./truspades_output/TSLRs.fasta",
+                                      "r") as fin:
+                                data = fin.read()
+                            with open('contig_list.txt', 'a') as fout:
+                                fout.write('>' + "Barcode: " + barcode + "\n")
+                                fout.write(data + "\n")
+
     if makeHistogram:
 #         for numBarcodes in histogram:
 #             print >> histoOut, (str(numBarcodes) + ','
@@ -371,9 +425,11 @@ if __name__ == '__main__':
     parser.add_argument('--runVelvet', action='store_true', default=False)
     parser.add_argument('--diginorm', action='store_true', default=False)
     parser.add_argument('--runSpades', action='store_true', default=False)
+    parser.add_argument('--runTruSpades', action='store_true', default=False)
     parser.add_argument('--HPCC', action='store_true', default=False)
     parser.add_argument('--quality', action='store_true', default=False)
     args = parser.parse_args()
 
     main(args.infile, args.makeHistogram, args.runVelvet,
-         args.diginorm, args.runSpades, args.HPCC, args.quality)
+         args.diginorm, args.runSpades, args.runTruSpades,
+         args.HPCC, args.quality)
