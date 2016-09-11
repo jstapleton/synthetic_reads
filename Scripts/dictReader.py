@@ -8,14 +8,14 @@
 #       created by barcodeHasher.py and sends files to SPAdes or Velvet
 #       for assembly.
 #
-#   Options: 
+#   Options:
 #       --makeHistogram: counts the number of reads in each  barcode-defined
 #                           group, returns a file histogram.txt with one
 #                           count per line that can be used to make a
 #                           histogram and estimate the sample complexity.
 #                           The constant MIN_NUMBER_OF_SEQUENCES defines the
 #                           cutoff below which a bin is ignored.
-#                           
+#
 #       --runVelvet: creates a fasta file from the reads in each barcode-
 #                       defined group and sends it to Velvet for assembly.
 #
@@ -58,7 +58,7 @@ def main(infile, makeHistogram, runVelvet, diginorm, runSpades, runTruSpades, HP
         histoOut = open("histogram.txt", 'w')
         goodReads = 0
         totalReads = 0
-        
+
     if (runVelvet + runSpades + runTruSpades):
         if os.path.exists('./contig_list.txt'):
             subprocess.call(['rm', 'contig_list.txt'])
@@ -182,7 +182,7 @@ def main(infile, makeHistogram, runVelvet, diginorm, runSpades, runTruSpades, HP
                         # overwritten each time through
                         # the loop with a fasta list of
                         # sequences to feed to Spades
-                        
+
                         if quality:
                             with open('left.fq', 'w') as left,\
                                     open('right.fq', 'w') as right,\
@@ -205,12 +205,12 @@ def main(infile, makeHistogram, runVelvet, diginorm, runSpades, runTruSpades, HP
                                         unpaired.write('+\n')
                                         unpaired.write(qual1 + '\n')
                                     else:
-                                        left.write('@Seq_ID' + str(i) + '_1\n')
+                                        left.write('@Seq_ID' + str(i) + '\n')
                                         left.write(seq1 + '\n')
                                         left.write('+\n')
                                         left.write(qual1 + '\n')
                                         right.write('@Seq_ID' + str(i) +
-                                                    '_2\n')
+                                                    '\n')
                                         right.write(seq2 + '\n')
                                         right.write('+\n')
                                         right.write(qual2 + '\n')
