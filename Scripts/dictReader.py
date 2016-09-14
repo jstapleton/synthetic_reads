@@ -63,6 +63,11 @@ def main(infile, makeHistogram, runVelvet, diginorm, runSpades, runTruSpades, HP
         if os.path.exists('./contig_list.txt'):
             subprocess.call(['rm', 'contig_list.txt'])
 
+    if runTruSpades:
+        quality = 1
+        if not os.path.exists('./truspades_input'):
+            os.makedirs('./truspades_input')
+
     with open(infile, 'r') as data:
         # parse JSON-dumped dictionary (uniqueDict.txt, unpairedDict.txt, etc)
         # Consider one barcode-defined group at a time
@@ -355,20 +360,20 @@ def main(infile, makeHistogram, runVelvet, diginorm, runSpades, runTruSpades, HP
                         # overwritten each time through
                         # the loop with a fastq list of
                         # sequences to feed to truSpades
-                        
-                        with open('reads_L1_R1.fq', 'w') as left,\
-                                open('reads_L1_R2.fq', 'w') as right:
+
+                        with open('./truspades_input/reads_L1_R1.fastq', 'w') as left,\
+                                open('./truspades_input/reads_L1_R2.fastq', 'w') as right:
                                 i = 1
                                 for seq1, qual1, seq2, qual2 in\
                                         grouper(4, complete_list):
                                     if (seq1 == "") or (seq2 == ""):
                                         continue
-                                    left.write('@Seq_ID' + str(i) + '_1\n')
+                                    left.write('@Seq_ID' + str(i) + '\n')
                                     left.write(seq1 + '\n')
                                     left.write('+\n')
                                     left.write(qual1 + '\n')
                                     right.write('@Seq_ID' + str(i) +
-                                                '_2\n')
+                                                '\n')
                                     right.write(seq2 + '\n')
                                     right.write('+\n')
                                     right.write(qual2 + '\n')
@@ -377,22 +382,25 @@ def main(infile, makeHistogram, runVelvet, diginorm, runSpades, runTruSpades, HP
                                   # write dataset file
                         with open('dataset_file.txt', 'w') as dataset_file:
                             current_path = os.path.dirname(os.path.realpath('dataset_file.txt'))
-                            dataset_file.write(barcode + ' ' + current_path + '/reads_L1_R1.fq ' + current_path + '/reads_L1_R2.fq') 
+                            dataset_file.write(barcode + ' ' + current_path + '/truspades_input/reads_L1_R1.fastq ' \
+                                    + current_path + '/truspades_input/reads_L1_R2.fastq')
 
                     # run truSpades
                         if HPCC:
-                            subprocess.call(["truspades.py", 
+                            subprocess.call(["truspades.py",
+           #                                  "--input-dir", "truspades_input",
                                              "--dataset", "dataset_file.txt",
                                              "-t", "1",
                                              "-o", "truspades_output"])
                         else:
-                            subprocess.call(["truspades.py", 
+                            subprocess.call(["truspades.py",
+           #                                  "--input-dir", "truspades_input",
                                              "--dataset", "dataset_file.txt",
                                              "-o", "truspades_output"])
 
                         # append contigs.fasta to a growing file of contigs
-                        if os.path.exists("./truspades_output/contigs.fasta"):
-                            with open("./truspades_output/TSLRs.fasta",
+                        if os.path.exists("./truspades_output/TSLR.fasta"):
+                            with open("./truspades_output/TSLR.fasta",
                                       "r") as fin:
                                 data = fin.read()
                             with open('contig_list.txt', 'a') as fout:
