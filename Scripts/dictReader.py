@@ -30,8 +30,16 @@
 #                          barcode-defined group and sends them to truSPAdes
 #                          for assembly.
 #
+#       --HPCC: calls SPAdes with one thread as required by some HPCCs.
+#
 #       --quality: creates fastq files rather than fasta files and uses
 #                   SPAdes's built-in error correction mode.
+#
+#       --TRUNCATED_BARCODE_LENGTH: BARCODE_LENGTH - BARCODE_TRUNCATE from
+#                                       the barcodeHasher.py run, default 14
+#
+#       --MIN_NUMBER_OF_SEQUENCES: minimum number of reads in a bin to count
+#                                      in --makeHistogram
 #
 #############################################################################
 
@@ -42,12 +50,11 @@ import subprocess
 import os
 
 
-def main(infile, makeHistogram, runVelvet, diginorm, runSpades, runTruSpades, HPCC, quality):
+def main(infile, makeHistogram, runVelvet, diginorm, runSpades, runTruSpades, HPCC,
+        quality, TRUNCATED_BARCODE_LENGTH, MIN_NUMBER_OF_SEQUENCES):
 
-    MIN_NUMBER_OF_SEQUENCES = 100
-    KMER_LENGTH = 99
-    MIN_CONTIG_LENGTH = 350
-    TRUNCATED_BARCODE_LENGTH = 14
+    KMER_LENGTH = 99 # for diginorm
+    MIN_CONTIG_LENGTH = 350 # for Velvet
 
     if not runVelvet and not makeHistogram and not runSpades and not runTruSpades:
         print "Not doing anything!"
@@ -108,7 +115,7 @@ def main(infile, makeHistogram, runVelvet, diginorm, runSpades, runTruSpades, HP
                    # if len(complete_list) > 10 and len(complete_list) < 10000:
                     if quality:
                         if len(complete_list) > 2 * MIN_NUMBER_OF_SEQUENCES:
-                        # divide by two here to get number of PE read pairs
+                            # divide by two here to get number of PE read pairs
                             print >> histoOut, len(complete_list)/4
                         totalReads += len(complete_list)/2
                         if len(complete_list) > 1000:
@@ -117,7 +124,7 @@ def main(infile, makeHistogram, runVelvet, diginorm, runSpades, runTruSpades, HP
                             goodReads += len(complete_list)/2
                     else:
                         if len(complete_list) > MIN_NUMBER_OF_SEQUENCES:
-                        # divide by two here to get number of PE read pairs
+                            # divide by two here to get number of PE read pairs
                             print >> histoOut, len(complete_list)/2
                         totalReads += len(complete_list)
                         if len(complete_list) > 500:
@@ -135,7 +142,7 @@ def main(infile, makeHistogram, runVelvet, diginorm, runSpades, runTruSpades, HP
                         (len(complete_list) > 2 * MIN_NUMBER_OF_SEQUENCES))):
 
                     if runVelvet:
-                        # open an output file that will be
+                            # open an output file that will be
                         # overwritten each time through
                         # the loop with a fasta list of sequences
                         # to feed to Velvet
@@ -429,15 +436,30 @@ def grouper(n, iterable):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('infile')
-    parser.add_argument('--makeHistogram', action='store_true', default=False)
-    parser.add_argument('--runVelvet', action='store_true', default=False)
-    parser.add_argument('--diginorm', action='store_true', default=False)
-    parser.add_argument('--runSpades', action='store_true', default=False)
-    parser.add_argument('--runTruSpades', action='store_true', default=False)
-    parser.add_argument('--HPCC', action='store_true', default=False)
-    parser.add_argument('--quality', action='store_true', default=False)
+    parser.add_argument('--makeHistogram', action='store_true', default=False,
+            help='counts the number of reads in each barcode-defined group,\
+            returns a file histogram.txt with one count per line that can be used to\
+            make a histogram and estimate the sample complexity. The constant\
+            MIN_NUMBER_OF_SEQUENCES defines the cutoff below which a bin is ignored.')
+    parser.add_argument('--runVelvet', action='store_true', default=False,
+            help='creates a fasta file from the reads in each barcode-defined group and sends it to Velvet for assembly.')
+    parser.add_argument('--diginorm', action='store_true', default=False,
+            help='performs digital normalization on each read group before sending it for assembly.')
+    parser.add_argument('--runSpades', action='store_true', default=False,
+            help='creates fasta or fastq files from the reads in each barcode-defined group and sends them to SPAdes for assembly.')
+    parser.add_argument('--runTruSpades', action='store_true', default=False,
+            help='creates fastq files from the reads in each barcode-defined group and sends them to truSPAdes for assembly.')
+    parser.add_argument('--HPCC', action='store_true', default=False,
+            help='calls SPAdes with one thread as required by some HPCCs.')
+    parser.add_argument('--quality', action='store_true', default=False,
+            help='creates fastq files rather than fasta files and uses SPAdes built-in error correction mode.')
+    parser.add_argument('--TRUNCATED_BARCODE_LENGTH', action='store', dest="BARCODE_TRUNCATE", type=int, default=0,
+            help='BARCODE_LENGTH - BARCODE_TRUNCATE from the barcodeHasher.py run, default 14')
+    parser.add_argument('--MIN_NUMBER_OF_SEQUENCES', action='store', dest="MIN_NUMBER_OF_SEQUENCES", type=int, default=100,
+            help='minimum number of reads in a bin to count in --makeHistogram')
     args = parser.parse_args()
 
     main(args.infile, args.makeHistogram, args.runVelvet,
          args.diginorm, args.runSpades, args.runTruSpades,
-         args.HPCC, args.quality)
+         args.HPCC, args.quality, args.TRUNCACE_BARCODE_LENGTH,
+         args.MIN_NUMBER_OF_SEQUENCES)

@@ -21,6 +21,9 @@
 #               sequence are used
 #               (SCA2: 5'-ACACGACGTGAACGATAGGAATTG-3')
 #
+#       --primer: primer sequence used in the PCR. U for uracil.
+#                 Default is TR. --SCA2 can be used for SCA2.
+#
 #       --pairSeparateFile: call for two-tube barcode pairing
 #
 #       --pairSameFile: call for one-tube barcode pairing
@@ -36,6 +39,20 @@
 #                    sequence line, to allow error-checking by the assembler
 #                       (e.g., SPAdes)
 #
+#       --BARCODE_LENGTH: Length of the barcode. Default 16.
+#
+#       --BARCODE_TRUNCATE: Ignore this many bases at the beginning of
+#                           the barcode. Default 0.
+#
+#       --PAIR_THRESHOLD: Minimum number of times a pair of barcodes needs
+#                         to be seen to count as a pair. Default 1.
+#
+#       --ENDTRIM: Trim this many of bases from the ends of the read during
+#                  processing to remove low-confidence bases. Default 2.
+#
+#       --NUMFRACTIONS: Number of fractional dictionaries to print when
+#                       using the --partial flag. Default 10.
+#
 #############################################################################
 
 import argparse
@@ -48,8 +65,9 @@ import copy
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
 
-def main(infile, afterBarcode, SCA2, pairSeparateFile, pairSameFile,
-         useFwdUnpaired, partial, FLASH, quality):
+def main(infile, afterBarcode, SCA2, primer, pairSeparateFile, pairSameFile,
+        useFwdUnpaired, partial, FLASH, quality, BARCODE_LENGTH,
+        BARCODE_TRUNCATE, PAIR_THRESHOLD, ENDTRIM, NUMFRACTIONS):
 
     if pairSeparateFile + pairSameFile > 1:
         print "Please choose only one barcode pairing option"
@@ -61,7 +79,9 @@ def main(infile, afterBarcode, SCA2, pairSeparateFile, pairSameFile,
     ENDTRIM = 2
     NUMFRACTIONS = 10
 
-    COMPLEMENT_DICT = {'A': 'T', 'G': 'C', 'T': 'A', 'C': 'G', 'N': 'N'}
+    COMPLEMENT_DICT = {'A': 'T', 'G': 'C', 'T': 'A', 'C': 'G', 'N': 'N', 'U': 'AX'}
+           # 'X' as a marker for the positions of uracils in the reverse complement
+
     AFTER_BARCODE_SEQS = []
     AFTER_BARCODE_RC_SEQS = []
     if afterBarcode:
@@ -80,12 +100,17 @@ def main(infile, afterBarcode, SCA2, pairSeparateFile, pairSameFile,
     if SCA2:
         LOSTUSEQS = ['AATTCCT', 'ATCGTTC']
 
+    elif primer:
+        primer = primer.upper()
+        primerRC = ''.join([COMPLEMENT_DICT[base] for base in primer])[::-1]
+        LOSTUSEQS = primerRC.split("X")[1:] # start after the first U
+
     else:
         LOSTUSEQS = ['AGG', 'AATAGTT', 'ATGTGCATT']
 
     LOSTUSEQ_RCS = []
     for lostuseq in LOSTUSEQS:
-        LOSTUSEQ_RCS.append(''.join([COMPLEMENT_DICT[base] for 
+        LOSTUSEQ_RCS.append(''.join([COMPLEMENT_DICT[base] for
                             base in lostuseq])[::-1])
 
     # take trimmed infiles, entered as file1.fq,file2.fq
@@ -174,7 +199,7 @@ def main(infile, afterBarcode, SCA2, pairSeparateFile, pairSameFile,
                 barcode2rc = seq_F[: BARCODE_LENGTH - BARCODE_TRUNCATE]
                 if len(barcode2rc) != BARCODE_LENGTH - BARCODE_TRUNCATE:
                     continue
-                barcode2 = ''.join([COMPLEMENT_DICT[base] for 
+                barcode2 = ''.join([COMPLEMENT_DICT[base] for
                                     base in barcode2rc])[::-1]
                 seq_F = seq_F[BARCODE_LENGTH:]
 
@@ -530,15 +555,37 @@ def pairBarcodes(master_hash, pair_dict, final_dict, PAIR_THRESHOLD, confirmed):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('infile')
-    parser.add_argument('afterBarcode', nargs='?', default=False)
-    parser.add_argument('--SCA2', action='store_true', default=False)
-    parser.add_argument('--pairSeparateFile', action='store_true', default=False)
-    parser.add_argument('--pairSameFile', action='store_true', default=False)
-    parser.add_argument('--useFwdUnpaired', action='store_true', default=False)
-    parser.add_argument('--partial', action='store_true', default=False)
-    parser.add_argument('--FLASH', action='store_true', default=False)
-    parser.add_argument('--quality', action='store_true', default=False)
+    parser.add_argument('afterBarcode', nargs='?', default=False,
+            help='one or more (comma-separated) sequences, one of which is required to follow the barcode to confirm that the read is not spurious')
+    parser.add_argument('--SCA2', action='store_true', default=False,
+            help='call when adapters with the SCA2 PCR primer sequence are used. SCA2: 5-ACACGACGTGAACGATAGGAATTG-3')
+    parser.add_argument('--primer', action='store',
+            help='primer sequence used in the PCR. U for uracil. Default is TR. --SCA2 can be used for SCA2.')
+    parser.add_argument('--pairSeparateFile', action='store_true', default=False,
+            help='call for two-tube barcode pairing')
+    parser.add_argument('--pairSameFile', action='store_true', default=False,
+            help='call for one-tube barcode pairing')
+    parser.add_argument('--useFwdUnpaired', action='store_true', default=False,
+            help='call to use forward reads whose reverse pairs were dropped by trimmomatic')
+    parser.add_argument('--partial', action='store_true', default=False,
+            help='print dictionaries every 1/NUMFRACTIONS of the data')
+    parser.add_argument('--FLASH', action='store_true', default=False,
+            help='merge overlapping forward and reverse reads with FLASH')
+    parser.add_argument('--quality', action='store_true', default=False,
+            help='add fastq quality line to the dictinary along with the sequence line, to allow error-checking by the assembler (e.g., SPAdes)')
+    parser.add_argument('--BARCODE_LENGTH', action="store", dest="BARCODE_LENGTH", type=int, default=16,
+            help='length of the barcode, default 16.')
+    parser.add_argument('--BARCODE_TRUNCATE', action="store", dest="BARCODE_TRUNCATE", type=int, default=0,
+            help='ignore this many bases at the beginning of the barcode, default 0.')
+    parser.add_argument('--PAIR_THRESHOLD', action="store", dest="PAIR_THRESHOLD", type=int, default=1,
+            help='minimum number of times a pair of barcodes needs to be seen to count as a pair, default 1.')
+    parser.add_argument('--ENDTRIM', action="store", dest="ENDTRIM", type=int, default=2,
+            help='trim this many of bases from the ends of the read during processing to remove low-confidence bases, default 2.')
+    parser.add_argument('--NUMFRACTIONS', action="store", dest="NUMFRACTIONS", type=int, default=10,
+            help='number of fractional dictionaries to print when using the --partial flag, default 10.')
     args = parser.parse_args()
 
-    main(args.infile, args.afterBarcode, args.SCA2, args.pairSeparateFile,
-         args.pairSameFile, args.useFwdUnpaired, args.partial, args.FLASH, args.quality)
+    main(args.infile, args.afterBarcode, args.SCA2, args.primer, args.pairSeparateFile,
+         args.pairSameFile, args.useFwdUnpaired, args.partial, args.FLASH, args.quality,
+         args.BARCODE_LENGTH, args.BARCODE_TRUNCATE, args.PAIR_THRESHOLD, args.ENDTRIM,
+         args.NUMFRACTIONS)

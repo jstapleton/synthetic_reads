@@ -9,7 +9,16 @@
 #   into separate FASTQ files on the basis of post-barcode indexes.
 #
 #   The algorithm looks for a fixed sequence(s) after a barcode.
-#   To use, first hard-code the fixed sequence(s) below.
+#
+#   Options:
+#
+#   --AFTER_BARCODE: String of comma-separated index sequences to
+#                    look for after the barcode
+#
+#   --BARCODE_LENGTH: Length of the barcode. Default 16.
+#
+#   --BARCODE_TRUNCATE: Ignore this many bases at the beginning of
+#                       the barcode. Default 0.
 #
 #######################################################################
 
@@ -20,43 +29,7 @@ import itertools
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
 
-# Hard-code the fixed sequence(s) to look for after the barcode.
-AFTER_BARCODE = ['ATCACGC',
-                 'CGATGTC',
-                 'TTAGGCC',
-                 'TGACCAC',
-                 'ACAGTGC',
-                 'GCCAATC',
-                 'CAGATCC',
-                 'ACTTGAC',
-                 'GATCAGC',
-                 'TAGCTTC',
-                 'GGCTACC',
-                 'CTTGTAC',
-                 'AGTCAAC',
-                 'AGTTCCC',
-                 'ATGTCAC',
-                 'CCGTCCC',
-                 'GTAGAGC',
-                 'GTCCGCC',
-                 'GTGAAAC',
-                 'GTGGCCC',
-                 'GTTTCGC',
-                 'CGTACGC',
-                 'GAGTGGC',
-                 'GGTAGCC',
-                 'ACTGATC',
-                 'ATGAGCC',
-                 'ATTCCTC',
-                 'CAAAAGC',
-                 'CAACTAC',
-                 'CACCGGC']
-
-BARCODE_LENGTH = 16
-BARCODE_TRUNCATE = 0
-
-
-def main(infile):
+def main(infile, AFTER_BARCODE, BARCODE_LENGTH, BARCODE_TRUNCATE):
     forward_paired, reverse_paired, forward_unpaired = infile.split(',')
     readCount = 0
     start_time = time.time()
@@ -107,6 +80,16 @@ def main(infile):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("infile")
+    parser.add_argument("--AFTER_BARCODE", action="store", dest="AFTER_BARCODE", default=['ATCACGC',
+        'CGATGTC', 'TTAGGCC', 'TGACCAC', 'ACAGTGC', 'GCCAATC', 'CAGATCC', 'ACTTGAC', 'GATCAGC', 'TAGCTTC',
+        'GGCTACC', 'CTTGTAC', 'AGTCAAC', 'AGTTCCC', 'ATGTCAC', 'CCGTCCC', 'GTAGAGC', 'GTCCGCC', 'GTGAAAC',
+        'GTGGCCC', 'GTTTCGC', 'CGTACGC', 'GAGTGGC', 'GGTAGCC', 'ACTGATC', 'ATGAGCC', 'ATTCCTC', 'CAAAAGC',
+        'CAACTAC', 'CACCGGC'],
+            help='String of comma-separated index sequences to look for after the barcode')
+    parser.add_argument('--BARCODE_LENGTH', action="store", dest="BARCODE_LENGTH", type=int, default=16,
+            help='length of the barcode, default 16.')
+    parser.add_argument('--BARCODE_TRUNCATE', action="store", dest="BARCODE_TRUNCATE", type=int, default=0,
+            help='Ignore this many bases at the beginning of the barcode, default 0.')
     args = parser.parse_args()
 
-    main(args.infile)
+    main(args.infile, args.AFTER_BARCODE, args.BARCODE_LENGTH, args.BARCODE_TRUNCATE)

@@ -59,9 +59,12 @@ def main(contig_file, minlength, maxlength, outfile):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('contig_file')
-    parser.add_argument('--minlength', default=0)
-    parser.add_argument('--maxlength', default=99999999999999999999)
-    parser.add_argument('--outfile', default='filtered_contigs.txt')
+    parser.add_argument('--minlength', default=0,
+            help='minimum contig length to be written')
+    parser.add_argument('--maxlength', default=99999999999999999999,
+            help='maximum contig length to be written')
+    parser.add_argument('--outfile', default='filtered_contigs.txt',
+            help='output file name')
     args = parser.parse_args()
 
     main(args.contig_file, args.minlength, args.maxlength, args.outfile)
