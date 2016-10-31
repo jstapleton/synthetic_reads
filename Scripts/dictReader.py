@@ -41,6 +41,9 @@
 #       --MIN_NUMBER_OF_SEQUENCES: minimum number of reads in a bin to count
 #                                      in --makeHistogram
 #
+#       --threads: number of threads to use when running SPAdes, default 8,
+#                  --HPCC sets to 1
+#
 #############################################################################
 
 from __future__ import division
@@ -241,117 +244,64 @@ def main(infile, makeHistogram, runVelvet, diginorm, runSpades, runTruSpades, HP
 
                     # send fasta to Spades
                         if HPCC:
-                            if quality:
-                                if diginorm:
-                                    subprocess.call(["normalize-by-median.py",
-                                                     "-k", "21", "-C", "20",
-                                                     "-N", "4", "-x", "5e8",
-                                                     "-p", "-s",
-                                                     "normC20k20.kh",
-                                                     "fastq.fq"])
-                                    subprocess.call(["filter-abund.py", "-V",
-                                                     "normC20k20.kh",
-                                                     "fastq.fq.keep"])
-                                    subprocess.call(["mv", "fastq.fq.keep",
-                                                     "fastq.fq"])
-                                    subprocess.call(["spades.py", "-k",
-                                                     "21,33,55,77,99,127",
-                                                     "-t", "1", "--careful",
-                                                     "--sc",
-                                                     "--pe1-12", "fastq.fq",
-                                                     "-o", "spades_output"])
-                                else:
-                                    subprocess.call(["spades.py", "-k",
-                                                     "21,33,55,77,99,127",
-                                                     "-t",
-                                                     "1", "--careful", "--sc",
-                                                     "--pe1-1", "left.fq",
-                                                     "--pe1-2", "right.fq",
-                                                     "--pe1-s", "unpaired.fq",
-                                                     "-o", "spades_output",
-                                                     "--disable-gzip-output"])
+                            threads = 1
+
+                        if quality:
+                            if diginorm:
+                                subprocess.call(["normalize-by-median.py",
+                                                 "-k", "21", "-C", "20",
+                                                 "-N", "4", "-x", "5e8",
+                                                 "-p", "-s",
+                                                 "normC20k20.kh",
+                                                 "fastq.fq"])
+                                subprocess.call(["filter-abund.py", "-V",
+                                                 "normC20k20.kh",
+                                                 "fastq.fq.keep"])
+                                subprocess.call(["mv", "fastq.fq.keep",
+                                                 "fastq.fq"])
+                                subprocess.call(["spades.py", "-k",
+                                                 "21,33,55,77,99,127",
+                                                 "-t", threads, "--careful",
+                                                 "--sc",
+                                                 "--pe1-12", "fastq.fq",
+                                                 "-o", "spades_output"])
                             else:
-                                if diginorm:
-                                    subprocess.call(["normalize-by-median.py",
-                                                     "-k", "21", "-C", "20",
-                                                     "-N", "4", "-x", "5e8",
-                                                     "-p", "-s",
-                                                     "normC20k20.kh",
-                                                     "fasta.fa"])
-                                    subprocess.call(["filter-abund.py", "-V",
-                                                     "normC20k20.kh",
-                                                     "fast.fa.keep"])
-                                    subprocess.call(["mv", "fasta.fa.keep",
-                                                     "fasta.fa"])
-                                    subprocess.call(["spades.py", "-k",
-                                                     "21,33,55,77,99,127",
-                                                     "-t",
-                                                     "1", "--careful", "--sc",
-                                                     "--pe1-12", "fasta.fa",
-                                                     "-o", "spades_output"])
-                                else:
-                                    subprocess.call(["spades.py", "-k",
-                                                     "21,33,55,77,99,127",
-                                                     "-t", "1", "--careful",
-                                                     "--only-assembler",
-                                                     "--sc",
-                                                     "--pe1-12", "fasta.fa",
-                                                     "-o", "spades_output"])
+                                subprocess.call(["spades.py", "-k",
+                                                 "21,33,55,77,99,127",
+                                                 "-t", threads,
+                                                 "--careful", "--sc",
+                                                 "--pe1-1", "left.fq",
+                                                 "--pe1-2", "right.fq",
+                                                 "--pe1-s", "unpaired.fq",
+                                                 "-o", "spades_output",
+                                                 "--disable-gzip-output"])
                         else:
-                            if quality:
-                                if diginorm:
-                                    subprocess.call(["normalize-by-median.py",
-                                                     "-k", "21", "-C", "20",
-                                                     "-N", "4", "-x", "5e8",
-                                                     "-p", "-s",
-                                                     "normC20k20.kh",
-                                                     "fastq.fq"])
-                                    subprocess.call(["filter-abund.py", "-V",
-                                                     "normC20k20.kh",
-                                                     "fastq.fq.keep"])
-                                    subprocess.call(["mv", "fastq.fq.keep",
-                                                     "fastq.fq"])
-                                    subprocess.call(["spades.py", "-k",
-                                                     "21,33,55,77,99,127",
-                                                     "--careful", "--sc",
-                                                     "--pe1-12", "fastq.fq",
-                                                     "-o", "spades_output"])
-                                else:
-                                    subprocess.call(["spades.py", "-k",
-                                                     "21,33,55,77,99,127",
-                                                     "-t",
-                                                     "1", "--careful", "--sc",
-                                                     "--pe1-1", "left.fq",
-                                                     "--pe1-2", "right.fq",
-                                                     "--pe1-s", "unpaired.fq",
-                                                     "-o", "spades_output",
-                                                     "--disable-gzip-output"])
+                            if diginorm:
+                                subprocess.call(["normalize-by-median.py",
+                                                 "-k", "21", "-C", "20",
+                                                 "-N", "4", "-x", "5e8",
+                                                 "-p", "-s",
+                                                 "normC20k20.kh",
+                                                 "fasta.fa"])
+                                subprocess.call(["filter-abund.py", "-V",
+                                                 "normC20k20.kh",
+                                                 "fast.fa.keep"])
+                                subprocess.call(["mv", "fasta.fa.keep",
+                                                 "fasta.fa"])
+                                subprocess.call(["spades.py", "-k",
+                                                 "21,33,55,77,99,127",
+                                                 "-t", threads,
+                                                 "--careful", "--sc",
+                                                 "--pe1-12", "fasta.fa",
+                                                 "-o", "spades_output"])
                             else:
-                                if diginorm:
-                                    subprocess.call(["normalize-by-median.py",
-                                                     "-k", "21", "-C", "20",
-                                                     "-N", "4", "-x", "5e8",
-                                                     "-p", "-s",
-                                                     "normC20k20.kh",
-                                                     "fasta.fa"])
-                                    subprocess.call(["filter-abund.py", "-V",
-                                                     "normC20k20.kh",
-                                                     "fasta.fa.keep"])
-                                    subprocess.call(["mv", "fasta.fa.keep",
-                                                     "fasta.fa"])
-                                    subprocess.call(["spades.py", "-k",
-                                                     "21,33,55,77,99,127",
-                                                     "--careful", "--sc",
-                                                     "--pe1-12", "fasta.fa",
-                                                     "-o", "spades_output"])
-                                else:
-                                    subprocess.call(["spades.py", "-k",
-                                                     "21,33,55,77,99,127",
-                                                     "--careful",
-                                                     "--only-assembler",
-                                                     "--sc",
-                                                     "--pe1-12", "fasta.fa",
-                                                     "-o", "spades_output"])
+                                subprocess.call(["spades.py", "-k",
+                                                 "21,33,55,77,99,127",
+                                                 "-t", threads, "--careful",
+                                                 "--only-assembler",
+                                                 "--sc",
+                                                 "--pe1-12", "fasta.fa",
+                                                 "-o", "spades_output"])
 
                         # append contigs.fasta to a growing file of contigs
                         if os.path.exists("./spades_output/contigs.fasta"):
@@ -393,17 +343,10 @@ def main(infile, makeHistogram, runVelvet, diginorm, runSpades, runTruSpades, HP
                                     + current_path + '/truspades_input/reads_L1_R2.fastq')
 
                     # run truSpades
-                        if HPCC:
-                            subprocess.call(["truspades.py",
-           #                                  "--input-dir", "truspades_input",
-                                             "--dataset", "dataset_file.txt",
-                                             "-t", "1",
-                                             "-o", "truspades_output"])
-                        else:
-                            subprocess.call(["truspades.py",
-           #                                  "--input-dir", "truspades_input",
-                                             "--dataset", "dataset_file.txt",
-                                             "-o", "truspades_output"])
+                        subprocess.call(["truspades.py",
+                                         "--dataset", "dataset_file.txt",
+                                         "-t", threads,
+                                         "-o", "truspades_output"])
 
                         # append contigs.fasta to a growing file of contigs
                         if os.path.exists("./truspades_output/TSLR.fasta"):
@@ -457,9 +400,11 @@ if __name__ == '__main__':
             help='BARCODE_LENGTH - BARCODE_TRUNCATE from the barcodeHasher.py run, default 14')
     parser.add_argument('--MIN_NUMBER_OF_SEQUENCES', action='store', dest="MIN_NUMBER_OF_SEQUENCES", type=int, default=100,
             help='minimum number of reads in a bin to count in --makeHistogram')
+    parser.add_argument('--threads', action='store', dest="threads", type=int, default=8,
+            help='number of threads to use when running SPAdes, default 8, --HPCC sets to 1')
     args = parser.parse_args()
 
     main(args.infile, args.makeHistogram, args.runVelvet,
          args.diginorm, args.runSpades, args.runTruSpades,
          args.HPCC, args.quality, args.TRUNCACE_BARCODE_LENGTH,
-         args.MIN_NUMBER_OF_SEQUENCES)
+         args.MIN_NUMBER_OF_SEQUENCES, args.threads)
