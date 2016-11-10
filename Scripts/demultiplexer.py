@@ -10,10 +10,14 @@
 #
 #   The algorithm looks for a fixed sequence(s) after a barcode.
 #
-#   Options:
+#   Inputs:
 #
-#   --AFTER_BARCODE: String of comma-separated index sequences to
+#   infile: forward,reverse
+#
+#   afterBarcode: String of comma-separated index sequences to
 #                    look for after the barcode
+#
+#   Options:
 #
 #   --BARCODE_LENGTH: Length of the barcode. Default 16.
 #
@@ -29,12 +33,15 @@ import itertools
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
 
-def main(infile, AFTER_BARCODE, BARCODE_LENGTH, BARCODE_TRUNCATE):
+def main(infile, afterBarcode, BARCODE_LENGTH, BARCODE_TRUNCATE):
     forward_paired, reverse_paired, forward_unpaired = infile.split(',')
+    AFTER_BARCODE_SEQS = []
+    for ABseq in afterBarcode.split(','):
+        AFTER_BARCODE_SEQS.append(ABseq)
     readCount = 0
     start_time = time.time()
     i = 1
-    for index in AFTER_BARCODE:
+    for index in AFTER_BARCODE_SEQS:
         with open(forward_paired, 'rU') as fwd_paired:
             with open(reverse_paired, 'rU') as rev_paired:
                 f_iter = FastqGeneralIterator(fwd_paired)
@@ -80,12 +87,8 @@ def main(infile, AFTER_BARCODE, BARCODE_LENGTH, BARCODE_TRUNCATE):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("infile")
-    parser.add_argument("--AFTER_BARCODE", action="store", dest="AFTER_BARCODE", default=['ATCACGC',
-        'CGATGTC', 'TTAGGCC', 'TGACCAC', 'ACAGTGC', 'GCCAATC', 'CAGATCC', 'ACTTGAC', 'GATCAGC', 'TAGCTTC',
-        'GGCTACC', 'CTTGTAC', 'AGTCAAC', 'AGTTCCC', 'ATGTCAC', 'CCGTCCC', 'GTAGAGC', 'GTCCGCC', 'GTGAAAC',
-        'GTGGCCC', 'GTTTCGC', 'CGTACGC', 'GAGTGGC', 'GGTAGCC', 'ACTGATC', 'ATGAGCC', 'ATTCCTC', 'CAAAAGC',
-        'CAACTAC', 'CACCGGC'],
-            help='String of comma-separated index sequences to look for after the barcode')
+    parser.add_argument('afterBarcode', nargs='?', default=['ATCACGC,CGATGTC,TTAGGCC,TGACCAC,ACAGTGC,GCCAATC,CAGATCC,ACTTGAC,GATCAGC,TAGCTTC,GGCTACC,CTTGTAC,AGTCAAC,AGTTCCC,ATGTCAC,CCGTCCC,GTAGAGC,GTCCGCC,GTGAAAC,GTGGCCC,GTTTCGC,CGTACGC,GAGTGGC,GGTAGCC,ACTGATC,ATGAGCC,ATTCCTC,CAAAAGC,CAACTAC,CACCGGC'],
+        help='one or more (comma-separated) sequences, one of which is required to follow the barcode to confirm that the read is not spurious')
     parser.add_argument('--BARCODE_LENGTH', action="store", dest="BARCODE_LENGTH", type=int, default=16,
             help='length of the barcode, default 16.')
     parser.add_argument('--BARCODE_TRUNCATE', action="store", dest="BARCODE_TRUNCATE", type=int, default=0,
