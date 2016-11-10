@@ -36,7 +36,7 @@
 #                   SPAdes's built-in error correction mode.
 #
 #       --TRUNCATED_BARCODE_LENGTH: BARCODE_LENGTH - BARCODE_TRUNCATE from
-#                                       the barcodeHasher.py run, default 14
+#                                       the barcodeHasher.py run, default 16
 #
 #       --MIN_NUMBER_OF_SEQUENCES: minimum number of reads in a bin to count
 #                                      in --makeHistogram
@@ -261,14 +261,14 @@ def main(infile, makeHistogram, runVelvet, diginorm, runSpades, runTruSpades, HP
                                                  "fastq.fq"])
                                 subprocess.call(["spades.py", "-k",
                                                  "21,33,55,77,99,127",
-                                                 "-t", threads, "--careful",
+                                                 "-t", str(threads), "--careful",
                                                  "--sc",
                                                  "--pe1-12", "fastq.fq",
                                                  "-o", "spades_output"])
                             else:
                                 subprocess.call(["spades.py", "-k",
                                                  "21,33,55,77,99,127",
-                                                 "-t", threads,
+                                                 "-t", str(threads),
                                                  "--careful", "--sc",
                                                  "--pe1-1", "left.fq",
                                                  "--pe1-2", "right.fq",
@@ -290,14 +290,14 @@ def main(infile, makeHistogram, runVelvet, diginorm, runSpades, runTruSpades, HP
                                                  "fasta.fa"])
                                 subprocess.call(["spades.py", "-k",
                                                  "21,33,55,77,99,127",
-                                                 "-t", threads,
+                                                 "-t", str(threads),
                                                  "--careful", "--sc",
                                                  "--pe1-12", "fasta.fa",
                                                  "-o", "spades_output"])
                             else:
                                 subprocess.call(["spades.py", "-k",
                                                  "21,33,55,77,99,127",
-                                                 "-t", threads, "--careful",
+                                                 "-t", str(threads), "--careful",
                                                  "--only-assembler",
                                                  "--sc",
                                                  "--pe1-12", "fasta.fa",
@@ -345,7 +345,7 @@ def main(infile, makeHistogram, runVelvet, diginorm, runSpades, runTruSpades, HP
                     # run truSpades
                         subprocess.call(["truspades.py",
                                          "--dataset", "dataset_file.txt",
-                                         "-t", threads,
+                                         "-t", str(threads),
                                          "-o", "truspades_output"])
 
                         # append contigs.fasta to a growing file of contigs
@@ -396,8 +396,8 @@ if __name__ == '__main__':
             help='calls SPAdes with one thread as required by some HPCCs.')
     parser.add_argument('--quality', action='store_true', default=False,
             help='creates fastq files rather than fasta files and uses SPAdes built-in error correction mode.')
-    parser.add_argument('--TRUNCATED_BARCODE_LENGTH', action='store', dest="BARCODE_TRUNCATE", type=int, default=0,
-            help='BARCODE_LENGTH - BARCODE_TRUNCATE from the barcodeHasher.py run, default 14')
+    parser.add_argument('--TRUNCATED_BARCODE_LENGTH', action='store', dest="TRUNCATED_BARCODE_LENGTH", type=int, default=16,
+            help='BARCODE_LENGTH - BARCODE_TRUNCATE from the barcodeHasher.py run, default 16')
     parser.add_argument('--MIN_NUMBER_OF_SEQUENCES', action='store', dest="MIN_NUMBER_OF_SEQUENCES", type=int, default=100,
             help='minimum number of reads in a bin to count in --makeHistogram')
     parser.add_argument('--threads', action='store', dest="threads", type=int, default=8,
@@ -406,5 +406,5 @@ if __name__ == '__main__':
 
     main(args.infile, args.makeHistogram, args.runVelvet,
          args.diginorm, args.runSpades, args.runTruSpades,
-         args.HPCC, args.quality, args.TRUNCACE_BARCODE_LENGTH,
+         args.HPCC, args.quality, args.TRUNCATED_BARCODE_LENGTH,
          args.MIN_NUMBER_OF_SEQUENCES, args.threads)
