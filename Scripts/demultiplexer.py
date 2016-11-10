@@ -95,4 +95,4 @@ if __name__ == '__main__':
             help='Ignore this many bases at the beginning of the barcode, default 0.')
     args = parser.parse_args()
 
-    main(args.infile, args.AFTER_BARCODE, args.BARCODE_LENGTH, args.BARCODE_TRUNCATE)
+    main(args.infile, args.afterBarcode, args.BARCODE_LENGTH, args.BARCODE_TRUNCATE)
