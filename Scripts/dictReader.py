@@ -54,7 +54,7 @@ import os
 
 
 def main(infile, makeHistogram, runVelvet, diginorm, runSpades, runTruSpades, HPCC,
-        quality, TRUNCATED_BARCODE_LENGTH, MIN_NUMBER_OF_SEQUENCES):
+        quality, TRUNCATED_BARCODE_LENGTH, MIN_NUMBER_OF_SEQUENCES, threads):
 
     KMER_LENGTH = 99 # for diginorm
     MIN_CONTIG_LENGTH = 350 # for Velvet
