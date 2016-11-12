@@ -44,6 +44,10 @@
 #       --threads: number of threads to use when running SPAdes, default 8,
 #                  --HPCC sets to 1
 #
+#       --runCelera: calls the Celera assembler
+#
+#       --runTadpole: calls the Tadpole assember from bbmap
+#
 #############################################################################
 
 from __future__ import division
@@ -54,12 +58,12 @@ import os
 
 
 def main(infile, makeHistogram, runVelvet, diginorm, runSpades, runTruSpades, HPCC,
-        quality, TRUNCATED_BARCODE_LENGTH, MIN_NUMBER_OF_SEQUENCES, threads):
+        quality, TRUNCATED_BARCODE_LENGTH, MIN_NUMBER_OF_SEQUENCES, threads, runTadpole, runCelera):
 
     KMER_LENGTH = 99 # for diginorm
     MIN_CONTIG_LENGTH = 350 # for Velvet
 
-    if not runVelvet and not makeHistogram and not runSpades and not runTruSpades:
+    if not runVelvet and not makeHistogram and not runSpades and not runTruSpades and not runTadpole and not runCelera:
         print "Not doing anything!"
         return 0
 
@@ -77,6 +81,9 @@ def main(infile, makeHistogram, runVelvet, diginorm, runSpades, runTruSpades, HP
         quality = 1
         if not os.path.exists('./truspades_input'):
             os.makedirs('./truspades_input')
+
+    if runTadpole or runCelera:
+        quality = 1
 
     with open(infile, 'r') as data:
         # parse JSON-dumped dictionary (uniqueDict.txt, unpairedDict.txt, etc)
@@ -192,7 +199,7 @@ def main(infile, makeHistogram, runVelvet, diginorm, runSpades, runTruSpades, HP
                             statsout.write('>'+"Barcode: " + barcode + "\n")
                             statsout.write(stats + "\n")
 
-                    if runSpades:
+                    if runSpades or runTadpole or runCelera:
                         # open an output file that will be
                         # overwritten each time through
                         # the loop with a fasta list of
@@ -242,6 +249,7 @@ def main(infile, makeHistogram, runVelvet, diginorm, runSpades, runTruSpades, HP
                                         print >> fasta, seq
                                     i += 1
 
+                    if runSpades:
                     # send fasta to Spades
                         if HPCC:
                             threads = 1
@@ -357,14 +365,58 @@ def main(infile, makeHistogram, runVelvet, diginorm, runSpades, runTruSpades, HP
                                 fout.write('>' + "Barcode: " + barcode + "\n")
                                 fout.write(data + "\n")
 
+                    if runTadpole:
+                        subprocess.call(["tadpole.sh",
+                                          "in=left.fq",
+                                          "in2=right.fq",
+                                          "overwrite=true",
+                                          "oute1=correct1.fq",
+                                          "oute2=correct2.fq",
+                                          "mode=extend",
+                                          "el=50", "er=50",
+                                          "k=62", "ecc=t"])
+                        subprocess.call(["tadpole.sh",
+                                          "in=correct1.fq",
+                                          "in2=correct2.fq",
+                                          "out=tadpole.fa",
+                                          "overwrite=true",
+                                          "k=90",
+                                          "rinse=t", "shave=t",
+                                          "mincontig=250",
+                                          "mincov=3", "bm1=8"])
+
+                         # append contigs.fasta to a growing file of contigs
+                        if os.path.exists("tadpole.fa"):
+                            with open("tadpole.fa", "r") as fin:
+                                data = fin.read()
+                            with open('contig_list_tadpole.txt', 'a') as fout:
+                                fout.write('>' + "Barcode: " + barcode + "\n")
+                                fout.write(data + "\n")
+
+                    if runCelera:
+                        with open('leftright.frg', 'w') as outfile:
+                            subprocess.call(["fastqToCA", "-insertsize", "250", "25",
+                                             "-libraryname", "celera", "-technology",
+                                             "illumina", "-mates", "left.fq,right.fq",
+                                             "-nonrandom"], stdout=outfile)
+                        subprocess.call(["runCA", "-d", "celera", "-p", "celera", "leftright.frg"])
+
+                        if os.path.exists("celera/9-terminator/celera.utg.fasta"):
+                            with open("celera/9-terminator/celera.utg.fasta", "r") as fin:
+                                data = fin.read()
+                            with open('contig_list_celera.txt', 'a') as fout:
+                                fout.write('>' + "Barcode: " + barcode + "\n")
+                                fout.write(data + "\n")
+                            subprocess.call(["rm", "-r", "celera", "leftright.frg"])
+
     if makeHistogram:
 #         for numBarcodes in histogram:
 #             print >> histoOut, (str(numBarcodes) + ','
 #                           + str(histogram[numBarcodes]))
         histoOut.close()
 #         del histogram
-        print goodReads/totalReads
-        print totalReads
+        print "efficiency score: ", goodReads/totalReads
+        print "total number of reads: ", totalReads
 
     return 0
 
@@ -402,9 +454,13 @@ if __name__ == '__main__':
             help='minimum number of reads in a bin to count in --makeHistogram')
     parser.add_argument('--threads', action='store', dest="threads", type=int, default=8,
             help='number of threads to use when running SPAdes, default 8, --HPCC sets to 1')
+    parser.add_argument('--runTadpole', action='store_true', default=False,
+            help='calls the Tadpole assembler from bbmap')
+    parser.add_argument('--runCelera', action='store_true', default=False,
+            help='calls the Celera assembler')
     args = parser.parse_args()
 
     main(args.infile, args.makeHistogram, args.runVelvet,
          args.diginorm, args.runSpades, args.runTruSpades,
          args.HPCC, args.quality, args.TRUNCATED_BARCODE_LENGTH,
-         args.MIN_NUMBER_OF_SEQUENCES, args.threads)
+         args.MIN_NUMBER_OF_SEQUENCES, args.threads, args.runTadpole, args.runTruSpades)
