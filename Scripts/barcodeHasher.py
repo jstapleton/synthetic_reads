@@ -73,12 +73,6 @@ def main(infile, afterBarcode, SCA2, primer, pairSeparateFile, pairSameFile,
         print "Please choose only one barcode pairing option"
         return 1
 
-    BARCODE_LENGTH = 16
-    BARCODE_TRUNCATE = 1
-    PAIR_THRESHOLD = 1
-    ENDTRIM = 2
-    NUMFRACTIONS = 10
-
     COMPLEMENT_DICT = {'A': 'T', 'G': 'C', 'T': 'A', 'C': 'G', 'N': 'N', 'U': 'AX'}
            # 'X' as a marker for the positions of uracils in the reverse complement
 
